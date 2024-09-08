@@ -1,56 +1,60 @@
 #include "PipeAndFilter.h"
 
-// QueenFilter 的 execute 方法，遍历输入的所有棋盘，如果棋盘有效，则将其添加到结果中
-vector<vector<string>> QueenFilter::execute(vector<vector<string>> input)
+void PipeAndFilter::Solve()
 {
-    vector<vector<string>> result;
-    for (auto &board : input)
-    {
-        if (is_valid(board))
-        {
-            result.push_back(board);
-        }
-    }
-    return result;
+    PlaceQueen(0);
+    std::cout << "Total solutions: " << solution << std::endl;
 }
 
-// 检查棋盘是否有效的方法，遍历棋盘的每一个位置，如果发现一个皇后，并且这个皇后受到攻击，则返回 false
-bool QueenFilter::is_valid(vector<string> &board)
+// 放置皇后
+void PipeAndFilter::PlaceQueen(int row)
 {
-    int n = board.size();
-    vector<int> queens(n, -1);
-    for (int i = 0; i < n; i++)
+    if (row == scale)  // 如果已经放置了scale个皇后（即所有皇后都已放置完毕）
     {
-        for (int j = 0; j < n; j++)
+        solution++;  // 解决方案数量加1
+        return;
+    }
+
+    for (int col = 0; col < scale; col++)  // 遍历当前行的每一列
+    {
+        if (CanPlace(row, col))  // 如果可以在当前位置放置皇后
         {
-            if (board[i][j] == 'Q')
+            SetQueen(row, col);  // 放置皇后
+            PlaceQueen(row + 1);  // 在下一行放置皇后
+            RemoveQueen(row, col);  // 移除当前位置的皇后，以便于寻找其他可能的解决方案
+        }
+    }
+}
+
+// 判断是否可以在指定位置放置皇后
+bool PipeAndFilter::CanPlace(int row, int col)
+{
+    return filter_matrix[row][col] == 0;
+}
+// 设置皇后
+void PipeAndFilter::SetQueen(int row, int col)
+{
+    chessboard[row] = col;
+    UpdateFilterMatrix(row, col, 1);
+}
+// 移除皇后
+void PipeAndFilter::RemoveQueen(int row, int col)
+{
+    chessboard[row] = 0;
+    UpdateFilterMatrix(row, col, -1);
+}
+// 更新过滤矩阵
+void PipeAndFilter::UpdateFilterMatrix(int row, int col, int delta)
+{
+    for (int i = 0; i < scale; i++)  // 遍历每一行
+    {
+        for (int j = 0; j < scale; j++)  // 遍历每一列
+        {
+            // 如果当前位置与指定位置在同一行、同一列或同一对角线上
+            if (i == row || j == col || i - j == row - col || i + j == row + col)
             {
-                queens[i] = j;
-                if (!is_not_under_attack(i, j, queens))
-                {
-                    return false;
-                }
+                filter_matrix[i][j] += delta;  // 更新过滤矩阵的值
             }
         }
     }
-    return true;
-}
-
-// 检查一个皇后是否受到攻击的方法，遍历所有的已经放置的皇后，如果有任何一个皇后可以攻击到当前位置，则返回 false
-bool QueenFilter::is_not_under_attack(int row, int col, vector<int> &queens)
-{
-    for (int i = 0; i < row; i++)
-    {
-        if (queens[i] == col || queens[i] - i == col - row || queens[i] + i == col + row)
-        {
-            return false;
-        }
-    }
-    return true;
-}
-
-// Pipe 的 connect 方法，接受一个过滤器和一个输入，返回过滤器处理输入后的结果
-vector<vector<string>> Pipe::connect(Filter& filter, vector<vector<string>> input ) 
-{
-    return filter.execute(input);
 }
